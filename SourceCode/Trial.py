@@ -36,54 +36,9 @@ class Trial():
         return pause
 
     def __call__(self,bean1Grid,bean2Grid,playerGrid,designValues):
-        initialPlayerGrid=playerGrid
-        initialTime = time.get_ticks()
-        reactionTime=[]
-        trajectory=[initialPlayerGrid]
-        results=co.OrderedDict()
-        firstIntentionFlag=False
-        firstIntentionMidlineFlag=False
-        goal = []
-        aimedActionList=[]
-        totalStep=int(np.linalg.norm(np.array(playerGrid) - np.array(bean1Grid), ord=1))
-        if  isinstance(designValues, int) :
-            noiseStep = random.sample(list(range(1, totalStep + 1)), designValues)
-        else:
-            noiseStep=list()
-        stepCount=0
-        self.drawText("+",[0,0,0],[7,7])
-        pg.time.wait(1300)
         pg.event.set_allowed([pg.KEYDOWN, pg.KEYUP,pg.QUIT])
-        playerGrid, realAction, aimedAction, goal,  firstIntentionFlag, firstIntentionMidlineFlag,stepCount,noiseStep =\
-            self.humanController(bean1Grid,bean2Grid,playerGrid,trajectory,noiseStep,stepCount,\
-				 firstIntentionFlag,firstIntentionMidlineFlag,goal,designValues)
-        reactionTime.append(time.get_ticks() - initialTime)
-        trajectory.append(list(playerGrid))
-        pause = self.checkTerminationOfTrial(bean1Grid, bean2Grid, playerGrid)
-        aimedActionList.append(aimedAction)
-        while pause:
-            playerGrid, realAction, aimedAction,  noisePoint, firstIntentionFlag, firstIntentionMidlineFlag, stepCount,noiseStep = \
-                self.humanController(bean1Grid, bean2Grid, playerGrid, trajectory, noiseStep, stepCount, \
-                                     firstIntentionFlag, firstIntentionMidlineFlag, goal,designValues)
-            reactionTime.append(time.get_ticks()-reactionTime[-1])
-            trajectory.append(list(playerGrid))
-            pause=self.checkTerminationOfTrial(bean1Grid, bean2Grid,playerGrid)
-            aimedActionList.append(aimedAction)
-        pg.time.wait(500)
-        pg.event.set_blocked([pg.KEYDOWN, pg.KEYUP])
-        results["bean1GridX"] = bean1Grid[0]
-        results["bean1GridY"] = bean1Grid[1]
-        results["bean2GridX"] = bean2Grid[0]
-        results["bean2GridY"] = bean2Grid[1]
-        results["playerGridX"] = initialPlayerGrid[0]
-        results["playerGridY"] = initialPlayerGrid[1]
-        results["reactionTime"]=str(reactionTime)
-        results["trajectory"]=str(trajectory)
-        results["aimedAction"]=str(aimedActionList)
-        results["noisePoint"]=str(noiseStep)
-        results["goal"]=str(goal)
-        return results
-
+        self.drawNewState(bean1Grid, bean2Grid, playerGrid)
+        self.humanController()
 
 
 

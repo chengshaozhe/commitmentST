@@ -39,69 +39,16 @@ class HumanController():
 		self.drawNewState=drawNewState
 
 
-
-	def addNoise(self,targetGridA,targetGridB,playerGrid,trajectory,event,goalList, \
-							   noiseStep,firstIntentionFlag,firstIntentionMidlineFlag,stepCount,designValues):
-		aimedAction=self.actionDict[event.key]
-		goal=0
-		if designValues!="special" :
-			if stepCount in noiseStep :
-				while True:
-					actionSpace=self.actionDict.copy()
-					actionSpace.pop(event.key)
-					actionList = [str(action) for action in actionSpace.values()]
-					actionStr=np.random.choice(actionList)
-					realAction=eval(actionStr)
-					if np.all(np.add(playerGrid, realAction) >= 0) and \
-							np.all(np.add(playerGrid, realAction) < self.gridSize):
-						break
-			else:
-				realAction=self.actionDict[event.key]
-		else:
-			aimedGrid=np.add(playerGrid,aimedAction)
-			goal=inferGoal(trajectory, aimedGrid, targetGridA, targetGridB)
-			goalList.append(goal)
-			if goal != 0 and not firstIntentionFlag and not firstIntentionMidlineFlag:
-				noiseStep.append(stepCount)
-				goalList.append(goal)
-				firstIntentionFlag=True
-				allPosiibileplayerGrid = [np.add(playerGrid, action) for action in self.actionDict.values()]
-				if goal == 1 :
-					allPossibleDistance=[[np.linalg.norm(np.array(targetGridB) - np.array(possibleGrid), ord=1),possibleGrid] for possibleGrid in allPosiibileplayerGrid]
-				else :
-					allPossibleDistance=[[np.linalg.norm(np.array(targetGridA) - np.array(possibleGrid), ord=1),possibleGrid] for possibleGrid in allPosiibileplayerGrid]
-				orderedAllPossibleDistanceAndGrid = sorted(allPossibleDistance, key=lambda x: x[0])
-				orderedAllPossibleDistance = [distance[0] for distance in orderedAllPossibleDistanceAndGrid]
-				count, indexList = countCertainNumberInList(orderedAllPossibleDistance,
-																 orderedAllPossibleDistance[0])
-				minIndex = int(count - 1)
-				realAction =list( np.array(orderedAllPossibleDistanceAndGrid[random.randint(0, minIndex)][1])-np.array(playerGrid))
-				if np.linalg.norm(np.array(targetGridB) - np.array(playerGrid), ord=1)==np.linalg.norm(np.array(targetGridA) - np.array(playerGrid), ord=1):
-					firstIntentionMidlineFlag=True
-			else:
-				realAction=self.actionDict[event.key]
-		return realAction,aimedAction,goalList,firstIntentionFlag,firstIntentionMidlineFlag,noiseStep
-
-	def __call__(self,targetGridA,targetGridB,playerGrid,playerTrajectory,noiseStep,stepCount,\
-				 firstIntentionFlag,firstIntentionMidlineFlag,goalList,designValues):
-		pause=True
-		self.drawNewState(targetGridA,targetGridB,playerGrid)
-		realAction=[0,0]
-		aimedAction=[0,0]
+	def __call__(self):
+		pause = True
 		while pause:
+			pg.time.wait(10)
 			for event in pg.event.get():
-				if event.type == pg.KEYDOWN:
-					if event.key in self.actionDict.keys() and \
-							np.all(np.add(playerGrid, self.actionDict[event.key]) >= 0) and \
-							np.all(np.add(playerGrid, self.actionDict[event.key]) < self.gridSize) :
-						stepCount=stepCount+1
-						realAction, aimedAction, goalList, firstIntentionFlag, firstIntentionMidlineFlag,noiseStep=\
-							self.addNoise(targetGridA, targetGridB,playerGrid,  playerTrajectory,event,goalList, \
-														noiseStep,firstIntentionFlag, firstIntentionMidlineFlag, stepCount,designValues)
-						pause=False
-			playerGrid=np.add(playerGrid, realAction)
-			self.drawNewState(targetGridA, targetGridB, playerGrid)
-		return playerGrid,realAction, aimedAction, goalList,firstIntentionFlag, firstIntentionMidlineFlag,stepCount,noiseStep
+				if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
+					pause = False
+				elif event.type == pg.QUIT:
+					pg.quit()
+			pg.time.wait(10)
 
 
 
