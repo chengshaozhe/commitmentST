@@ -7,15 +7,11 @@ from math import floor
 
 
 class UpdateWorld():
-    def __init__(self,bottom,height,direction,dimension):
-        self.bottom=bottom
-        self.height=height
+    def __init__(self,direction,dimension):
         self.direction=direction
         self.dimension=dimension
 
-    def __call__(self):
-        bottom=random.choice(self.bottom)
-        height=random.choice(self.height)
+    def __call__(self,bottom,height):
         direction=random.choice(self.direction)
         if direction==0:
             pacmanPosition=[floor(self.dimension/2),random.randint(height,self.dimension-1)]
@@ -33,13 +29,20 @@ class UpdateWorld():
             pacmanPosition = [random.randint(height,self.dimension-1),floor(self.dimension / 2)]
             bean1Position = [pacmanPosition[0] - height, pacmanPosition[1] - floor(bottom / 2)]
             bean2Position = [pacmanPosition[0] - height, pacmanPosition[1] + floor(bottom / 2)]
-        return pacmanPosition,bean1Position,bean2Position,bottom,height,direction
+        return pacmanPosition,bean1Position,bean2Position,direction
 
 
-def createDesignValue(condition,blockNumber):
-    designValuesIndex=random.sample(list(range(len(condition))),blockNumber)
-    designValues=np.array(condition)[designValuesIndex].flatten().tolist()
-    return designValues
+def createNoiseDesignValue(condition,blockNumber):
+    noiseDesignValuesIndex=random.sample(list(range(len(condition))),blockNumber)
+    noiseDesignValues=np.array(condition)[noiseDesignValuesIndex].flatten().tolist()
+    noiseDesignValues.append('special')
+    return noiseDesignValues
+
+def createShapeDesignValue(bottom,height):
+    shapeDesignValues = [[b, h] for b in bottom for h in height]
+    random.shuffle(shapeDesignValues)
+    shapeDesignValues.append([random.choice(bottom), random.choice(height)])
+    return shapeDesignValues
 
 def main():
     pass

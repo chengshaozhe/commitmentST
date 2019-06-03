@@ -10,6 +10,7 @@ import UpdateWorld
 from Writer import WriteDataFrameToCSV
 from Trial import NormalTrial,SpecialTrial
 from itertools import permutations
+from random import shuffle,choice
 
 class Experiment():
     def __init__(self, normalTrial,specialTrial, writer, experimentValues,  updateWorld, drawImage, resultsPath, \
@@ -23,19 +24,21 @@ class Experiment():
         self.resultsPath = resultsPath
         self.minDistanceBetweenGrids = minDistanceBetweenGrids
 
-    def __call__(self,designValues):
-        for designValue in designValues:
-            playerGrid,bean1Grid, bean2Grid,bottom,height,direction = self.updateWorld()
-            if isinstance(designValue, int):
-                results = self.normalTrial(bean1Grid, bean2Grid, playerGrid,designValue)
+    def __call__(self,noiseDesignValues,shapeDesignValues):
+        for trialIndex in range(len(noiseDesignValues)):
+            playerGrid,bean1Grid, bean2Grid,direction = self.updateWorld(shapeDesignValues[trialIndex][0],
+                                                                         shapeDesignValues[trialIndex][1])
+            if isinstance(noiseDesignValues[trialIndex], int):
+                results = self.normalTrial(bean1Grid, bean2Grid, playerGrid,noiseDesignValues[trialIndex])
             else:
-                results = self.specialTrial(bean1Grid, bean2Grid, playerGrid,designValue)
-            results["bottom"]=bottom
-            results["height"]=height
+                results = self.specialTrial(bean1Grid, bean2Grid, playerGrid,noiseDesignValues[trialIndex])
+            results["noiseNumber"]=noiseDesignValues[trialIndex]
+            results["bottom"]=shapeDesignValues[trialIndex][0]
+            results["height"]=shapeDesignValues[trialIndex][1]
             results["direction"]=direction
             response = self.experimentValues.copy()
             response.update(results)
-            responseDF = pd.DataFrame(response, index=[designValue])
+            responseDF = pd.DataFrame(response, index=[trialIndex])
             self.writer(responseDF)
 
 
@@ -43,16 +46,16 @@ def main():
     dimension =15
     minDistanceBetweenGrids = 5
     blockNumber =   3
-    condition=list(permutations([1, 2, 0], 3))
-    condition.append((1, 1, 1))
-    designValues=UpdateWorld.createDesignValue(condition,blockNumber)
-    designValues.append('special')
+    noiseCondition=list(permutations([1, 2, 0], 3))
+    noiseCondition.append((1, 1, 1))
     picturePath = os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + '/Pictures/'
     resultsPath = os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + '/Results/'
     bottom=[4,6,8]
     height=[6,7,8]
     direction=[0,90,180,270]
-    updateWorld = UpdateWorld.UpdateWorld(bottom,height,direction,dimension)
+    noiseDesignValues=UpdateWorld.createNoiseDesignValue(noiseCondition,blockNumber)
+    shapeDesignValues=UpdateWorld.createShapeDesignValue(bottom,height)
+    updateWorld = UpdateWorld.UpdateWorld(direction,dimension)
     pg.init()
     screenWidth = 600
     screenHeight = 600
@@ -89,7 +92,7 @@ def main():
     experiment = Experiment(normalTrial,specialTrial, writer, experimentValues, updateWorld, drawImage, resultsPath,
                              minDistanceBetweenGrids)
     drawImage(introductionImage)
-    experiment(designValues)
+    experiment(noiseDesignValues,shapeDesignValues)
     drawImage(finishImage)
 
 
