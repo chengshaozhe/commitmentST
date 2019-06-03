@@ -9,23 +9,31 @@ import UpdateWorld
 import random
 
 
-# def extractNoRepeatingElements(list, number):
-#     while True:
-#         point = np.random.choice(list, number).tolist()
-#         if set(point) == number:
-#             break
-#     return point
+def inferGoal(trajectory, aimGrid, targetGridA, targetGridB):
+    pacmanBean1aimDisplacement = np.linalg.norm(np.array(targetGridA) - np.array(aimGrid), ord=1)
+    pacmanBean2aimDisplacement = np.linalg.norm(np.array(targetGridB) - np.array(aimGrid), ord=1)
+    pacmanBean1LastStepDisplacement = np.linalg.norm(np.array(targetGridA) - np.array(trajectory[-1]), ord=1)
+    pacmanBean2LastStepDisplacement = np.linalg.norm(np.array(targetGridB) - np.array(trajectory[-1]), ord=1)
+    bean1Goal = pacmanBean1LastStepDisplacement - pacmanBean1aimDisplacement
+    bean2Goal = pacmanBean2LastStepDisplacement - pacmanBean2aimDisplacement
+    if bean1Goal > bean2Goal:
+        goal = 1
+    elif bean1Goal < bean2Goal:
+        goal = 2
+    else:
+        goal = 0
+    return goal
 
 def extractNoRepeatingElements(list, number):
     point =random.sample(list, number)
-    print(point)
     return point
 
-class Trial():
-    def __init__(self,humanController,drawNewState,drawText):
+class NormalTrial():
+    def __init__(self,humanController,drawNewState,drawText,normalNoise):
         self.humanController=humanController
         self.drawNewState=drawNewState
         self.drawText=drawText
+        self.normalNoise=normalNoise
 
     def checkTerminationOfTrial(self,bean1Grid, bean2Grid, humanGrid):
         if np.linalg.norm(np.array(humanGrid) - np.array(bean1Grid), ord=1)==0 or \
@@ -38,37 +46,39 @@ class Trial():
     def __call__(self,bean1Grid,bean2Grid,playerGrid,designValues):
         initialPlayerGrid=playerGrid
         initialTime = time.get_ticks()
-        reactionTime=[]
+        reactionTime=list()
         trajectory=[initialPlayerGrid]
         results=co.OrderedDict()
-        firstIntentionFlag=False
-        firstIntentionMidlineFlag=False
-        goal = []
-        aimedActionList=[]
+        aimActionList=list()
         totalStep=int(np.linalg.norm(np.array(playerGrid) - np.array(bean1Grid), ord=1))
-        if  isinstance(designValues, int) :
-            noiseStep = random.sample(list(range(1, totalStep + 1)), designValues)
-        else:
-            noiseStep=list()
+        noiseStep = random.sample(list(range(1, totalStep + 1)), designValues)
         stepCount=0
+        goalList=list()
         self.drawText("+",[0,0,0],[7,7])
         pg.time.wait(1300)
+        self.drawNewState(bean1Grid,bean2Grid,initialPlayerGrid)
         pg.event.set_allowed([pg.KEYDOWN, pg.KEYUP,pg.QUIT])
-        playerGrid, realAction, aimedAction, goal,  firstIntentionFlag, firstIntentionMidlineFlag,stepCount,noiseStep =\
-            self.humanController(bean1Grid,bean2Grid,playerGrid,trajectory,noiseStep,stepCount,\
-				 firstIntentionFlag,firstIntentionMidlineFlag,goal,designValues)
+        aimPlayerGrid,aimAction =self.humanController(initialPlayerGrid)
+        goal = inferGoal(trajectory, aimPlayerGrid, bean1Grid, bean2Grid)
+        goalList.append(goal)
+        stepCount=stepCount+1
+        realPlayerGrid,aimAction=self.normalNoise( trajectory[-1],aimAction,trajectory,noiseStep, stepCount)
+        self.drawNewState(bean1Grid,bean2Grid,realPlayerGrid)
         reactionTime.append(time.get_ticks() - initialTime)
-        trajectory.append(list(playerGrid))
-        pause = self.checkTerminationOfTrial(bean1Grid, bean2Grid, playerGrid)
-        aimedActionList.append(aimedAction)
+        trajectory.append(list(realPlayerGrid))
+        aimActionList.append(aimAction)
+        pause = self.checkTerminationOfTrial(bean1Grid, bean2Grid, realPlayerGrid)
         while pause:
-            playerGrid, realAction, aimedAction,  noisePoint, firstIntentionFlag, firstIntentionMidlineFlag, stepCount,noiseStep = \
-                self.humanController(bean1Grid, bean2Grid, playerGrid, trajectory, noiseStep, stepCount, \
-                                     firstIntentionFlag, firstIntentionMidlineFlag, goal,designValues)
-            reactionTime.append(time.get_ticks()-reactionTime[-1])
-            trajectory.append(list(playerGrid))
-            pause=self.checkTerminationOfTrial(bean1Grid, bean2Grid,playerGrid)
-            aimedActionList.append(aimedAction)
+            aimPlayerGrid, aimAction = self.humanController(realPlayerGrid)
+            goal = inferGoal(trajectory, aimPlayerGrid, bean1Grid, bean2Grid)
+            goalList.append(goal)
+            stepCount = stepCount + 1
+            realPlayerGrid,aimAction = self.normalNoise(trajectory[-1], aimAction, trajectory, noiseStep, stepCount)
+            self.drawNewState(bean1Grid, bean2Grid, realPlayerGrid)
+            reactionTime.append(time.get_ticks() - initialTime)
+            trajectory.append(list(realPlayerGrid))
+            aimActionList.append(aimAction)
+            pause = self.checkTerminationOfTrial(bean1Grid, bean2Grid, realPlayerGrid)
         pg.time.wait(500)
         pg.event.set_blocked([pg.KEYDOWN, pg.KEYUP])
         results["bean1GridX"] = bean1Grid[0]
@@ -79,11 +89,83 @@ class Trial():
         results["playerGridY"] = initialPlayerGrid[1]
         results["reactionTime"]=str(reactionTime)
         results["trajectory"]=str(trajectory)
-        results["aimedAction"]=str(aimedActionList)
+        results["aimAction"]=str(aimActionList)
         results["noisePoint"]=str(noiseStep)
-        results["goal"]=str(goal)
+        results["goal"]=str(goalList)
         return results
 
+class SpecialTrial():
+    def __init__(self,humanController,drawNewState,drawText,awayFromTheGoalNoise):
+        self.humanController = humanController
+        self.drawNewState = drawNewState
+        self.drawText = drawText
+        self.awayFromTheGoalNoise=awayFromTheGoalNoise
+
+    def checkTerminationOfTrial(self,bean1Grid, bean2Grid, humanGrid):
+        if np.linalg.norm(np.array(humanGrid) - np.array(bean1Grid), ord=1)==0 or \
+                np.linalg.norm(np.array(humanGrid) - np.array(bean2Grid), ord=1) == 0 :
+            pause=False
+        else:
+            pause=True
+        return pause
+
+    def __call__(self,bean1Grid,bean2Grid,playerGrid,designValues):
+        initialPlayerGrid = playerGrid
+        initialTime = time.get_ticks()
+        reactionTime = list()
+        trajectory = [initialPlayerGrid]
+        results = co.OrderedDict()
+        aimActionList = list()
+        firstIntentionFlag=False
+        firstIntentionMidlineFlag=False
+        totalStep = int(np.linalg.norm(np.array(playerGrid) - np.array(bean1Grid), ord=1))
+        noiseStep = list()
+        stepCount = 0
+        goalList = list()
+        self.drawText("+", [0, 0, 0], [7, 7])
+        pg.time.wait(1300)
+        self.drawNewState(bean1Grid,bean2Grid,initialPlayerGrid)
+        pg.event.set_allowed([pg.KEYDOWN, pg.KEYUP, pg.QUIT])
+        aimPlayerGrid, aimAction = self.humanController(initialPlayerGrid)
+        goal = inferGoal(trajectory, aimPlayerGrid, bean1Grid, bean2Grid)
+        goalList.append(goal)
+        stepCount=stepCount+1
+        realPlayerGrid,firstIntentionFlag, firstIntentionMidlineFlag, noiseStep = self.awayFromTheGoalNoise(trajectory[-1],
+                                                bean1Grid,bean2Grid,aimAction,goal, firstIntentionFlag,
+                                              firstIntentionMidlineFlag,noiseStep, stepCount)
+
+        self.drawNewState(bean1Grid,bean2Grid,realPlayerGrid)
+        reactionTime.append(time.get_ticks() - initialTime)
+        trajectory.append(list(realPlayerGrid))
+        aimActionList.append(aimAction)
+        pause = self.checkTerminationOfTrial(bean1Grid, bean2Grid, realPlayerGrid)
+        while pause:
+            aimPlayerGrid, aimAction = self.humanController(realPlayerGrid)
+            goal = inferGoal(trajectory, aimPlayerGrid, bean1Grid, bean2Grid)
+            goalList.append(goal)
+            stepCount = stepCount + 1
+            realPlayerGrid, firstIntentionFlag, firstIntentionMidlineFlag, noiseStep = self.awayFromTheGoalNoise(
+                trajectory[-1], bean1Grid, bean2Grid, aimAction, goal, firstIntentionFlag,
+                firstIntentionMidlineFlag, noiseStep, stepCount)
+            self.drawNewState(bean1Grid, bean2Grid, realPlayerGrid)
+            reactionTime.append(time.get_ticks() - initialTime)
+            trajectory.append(list(realPlayerGrid))
+            aimActionList.append(aimAction)
+            pause = self.checkTerminationOfTrial(bean1Grid, bean2Grid, realPlayerGrid)
+        pg.time.wait(500)
+        pg.event.set_blocked([pg.KEYDOWN, pg.KEYUP])
+        results["bean1GridX"] = bean1Grid[0]
+        results["bean1GridY"] = bean1Grid[1]
+        results["bean2GridX"] = bean2Grid[0]
+        results["bean2GridY"] = bean2Grid[1]
+        results["playerGridX"] = initialPlayerGrid[0]
+        results["playerGridY"] = initialPlayerGrid[1]
+        results["reactionTime"] = str(reactionTime)
+        results["trajectory"] = str(trajectory)
+        results["aimAction"] = str(aimActionList)
+        results["noisePoint"] = str(noiseStep)
+        results["goal"] = str(goalList)
+        return results
 
 
 

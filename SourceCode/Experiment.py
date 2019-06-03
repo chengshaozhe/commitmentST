@@ -5,16 +5,17 @@ import collections as co
 import numpy as np
 import pickle
 from Visualization import DrawBackground, DrawNewState, DrawImage,DrawText
-from Controller import HumanController,ModelController
+from Controller import HumanController,ModelController,NormalNoise,AwayFromTheGoalNoise
 import UpdateWorld
 from Writer import WriteDataFrameToCSV
-from Trial import Trial
-from itertools import combinations, permutations
+from Trial import NormalTrial,SpecialTrial
+from itertools import permutations
 
 class Experiment():
-    def __init__(self, trial, writer, experimentValues,  updateWorld, drawImage, resultsPath, \
+    def __init__(self, normalTrial,specialTrial, writer, experimentValues,  updateWorld, drawImage, resultsPath, \
                  minDistanceBetweenGrids):
-        self.trial = trial
+        self.normalTrial = normalTrial
+        self.specialTrial=specialTrial
         self.writer = writer
         self.experimentValues = experimentValues
         self.updateWorld = updateWorld
@@ -25,8 +26,10 @@ class Experiment():
     def __call__(self,designValues):
         for designValue in designValues:
             playerGrid,bean1Grid, bean2Grid,bottom,height,direction = self.updateWorld()
-            print(playerGrid,bean1Grid, bean2Grid,bottom,height,direction)
-            results = self.trial(bean1Grid, bean2Grid, playerGrid,designValue)
+            if isinstance(designValue, int):
+                results = self.normalTrial(bean1Grid, bean2Grid, playerGrid,designValue)
+            else:
+                results = self.specialTrial(bean1Grid, bean2Grid, playerGrid,designValue)
             results["bottom"]=bottom
             results["height"]=height
             results["direction"]=direction
@@ -39,7 +42,7 @@ class Experiment():
 def main():
     dimension =15
     minDistanceBetweenGrids = 5
-    blockNumber = 3
+    blockNumber =   3
     condition=list(permutations([1, 2, 0], 3))
     condition.append((1, 1, 1))
     designValues=UpdateWorld.createDesignValue(condition,blockNumber)
@@ -76,11 +79,14 @@ def main():
     drawText=DrawText(screen,drawBackground)
     drawNewState = DrawNewState(screen, drawBackground, targetColor, playerColor, targetRadius, playerRadius)
     drawImage = DrawImage(screen)
-    humanController = HumanController(dimension,drawNewState)
+    humanController = HumanController(dimension)
+    normalNoise=NormalNoise(humanController)
+    awayFromTheGoalNoise=AwayFromTheGoalNoise(humanController)
     # policy = pickle.load(open("SingleWolfTwoSheepsGrid15.pkl","rb"))
     # modelController = ModelController(policy, dimension, stopwatchEvent, stopwatchUnit, drawNewState, finishTime)
-    trial = Trial(humanController, drawNewState,drawText)
-    experiment = Experiment(trial, writer, experimentValues, updateWorld, drawImage, resultsPath,
+    normalTrial = NormalTrial(humanController, drawNewState,drawText,normalNoise)
+    specialTrial=SpecialTrial(humanController, drawNewState,drawText,awayFromTheGoalNoise)
+    experiment = Experiment(normalTrial,specialTrial, writer, experimentValues, updateWorld, drawImage, resultsPath,
                              minDistanceBetweenGrids)
     drawImage(introductionImage)
     experiment(designValues)
