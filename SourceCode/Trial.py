@@ -4,7 +4,7 @@ from pygame import time
 import collections as co
 import pickle
 from Visualization import DrawBackground,DrawNewState,DrawImage
-from Controller import HumanController,ModelController
+from Controller import HumanController,ModelControllerSoftmax
 import UpdateWorld
 import random
 
@@ -29,8 +29,8 @@ def extractNoRepeatingElements(list, number):
     return point
 
 class NormalTrial():
-    def __init__(self,humanController,drawNewState,drawText,normalNoise):
-        self.humanController=humanController
+    def __init__(self,controller,drawNewState,drawText,normalNoise):
+        self.controller=controller
         self.drawNewState=drawNewState
         self.drawText=drawText
         self.normalNoise=normalNoise
@@ -58,7 +58,7 @@ class NormalTrial():
         pg.time.wait(1300)
         self.drawNewState(bean1Grid,bean2Grid,initialPlayerGrid)
         pg.event.set_allowed([pg.KEYDOWN, pg.KEYUP,pg.QUIT])
-        aimPlayerGrid,aimAction =self.humanController(initialPlayerGrid)
+        aimPlayerGrid,aimAction =self.controller(initialPlayerGrid,bean1Grid,bean2Grid)
         goal = inferGoal(trajectory, aimPlayerGrid, bean1Grid, bean2Grid)
         goalList.append(goal)
         stepCount=stepCount+1
@@ -69,12 +69,13 @@ class NormalTrial():
         aimActionList.append(aimAction)
         pause = self.checkTerminationOfTrial(bean1Grid, bean2Grid, realPlayerGrid)
         while pause:
-            aimPlayerGrid, aimAction = self.humanController(realPlayerGrid)
+            aimPlayerGrid, aimAction = self.controller(realPlayerGrid, bean1Grid, bean2Grid)
             goal = inferGoal(trajectory, aimPlayerGrid, bean1Grid, bean2Grid)
             goalList.append(goal)
             stepCount = stepCount + 1
             realPlayerGrid,aimAction = self.normalNoise(trajectory[-1], aimAction, trajectory, noiseStep, stepCount)
             self.drawNewState(bean1Grid, bean2Grid, realPlayerGrid)
+            # pg.time.delay(1000)
             reactionTime.append(time.get_ticks() - initialTime)
             trajectory.append(list(realPlayerGrid))
             aimActionList.append(aimAction)
@@ -95,8 +96,8 @@ class NormalTrial():
         return results
 
 class SpecialTrial():
-    def __init__(self,humanController,drawNewState,drawText,awayFromTheGoalNoise):
-        self.humanController = humanController
+    def __init__(self,controller,drawNewState,drawText,awayFromTheGoalNoise):
+        self.controller = controller
         self.drawNewState = drawNewState
         self.drawText = drawText
         self.awayFromTheGoalNoise=awayFromTheGoalNoise
@@ -126,7 +127,7 @@ class SpecialTrial():
         pg.time.wait(1300)
         self.drawNewState(bean1Grid,bean2Grid,initialPlayerGrid)
         pg.event.set_allowed([pg.KEYDOWN, pg.KEYUP, pg.QUIT])
-        aimPlayerGrid, aimAction = self.humanController(initialPlayerGrid)
+        aimPlayerGrid, aimAction = self.controller(initialPlayerGrid,bean1Grid,bean2Grid)
         goal = inferGoal(trajectory, aimPlayerGrid, bean1Grid, bean2Grid)
         goalList.append(goal)
         stepCount=stepCount+1
@@ -140,7 +141,7 @@ class SpecialTrial():
         aimActionList.append(aimAction)
         pause = self.checkTerminationOfTrial(bean1Grid, bean2Grid, realPlayerGrid)
         while pause:
-            aimPlayerGrid, aimAction = self.humanController(realPlayerGrid)
+            aimPlayerGrid, aimAction = self.controller(realPlayerGrid, bean1Grid, bean2Grid)
             goal = inferGoal(trajectory, aimPlayerGrid, bean1Grid, bean2Grid)
             goalList.append(goal)
             stepCount = stepCount + 1

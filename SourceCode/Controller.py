@@ -7,24 +7,25 @@ import Visualization
 
 def countCertainNumberInList(listToManipulate, certainNumber):
     count = 0
-    indexList = []
-    for number in listToManipulate:
-        if certainNumber == number:
+    indexList = list()
+    for i in range(len(listToManipulate)):
+        if certainNumber == listToManipulate[i]:
             count = count + 1
-            indexList.append(certainNumber)
+            indexList.append(i)
+
     return count, indexList
 
 
 class NormalNoise():
-    def __init__(self,HumanController):
-        self.action=[action for action in HumanController.actionDict.values()]
-        self.gridSize=HumanController.gridSize
+    def __init__(self,controller):
+        self.actionSpace=controller.actionSpace
+        self.gridSize=controller.gridSize
 
 
     def __call__(self, playerGrid,action,trajectory,noiseStep, stepCount):
         if stepCount in noiseStep:
             while True:
-                actionSpace = self.action.copy()
+                actionSpace = self.actionSpace.copy()
                 actionSpace.remove(action)
                 actionList = [str(action) for action in actionSpace]
                 actionStr = np.random.choice(actionList)
@@ -34,19 +35,19 @@ class NormalNoise():
                     break
         else:
             realAction = action
-        playerGrid = np.add(playerGrid, realAction)
-        return playerGrid,realAction
+        realPlayerGrid =tuple(np.add(playerGrid, realAction))
+        return realPlayerGrid,realAction
 
 class AwayFromTheGoalNoise():
-    def __init__(self,HumanController):
-        self.action=[action for action in HumanController.actionDict.values()]
-        self.gridSize=HumanController.gridSize
+    def __init__(self,controller):
+        self.actionSpace=controller.actionSpace
+        self.gridSize=controller.gridSize
 
     def __call__(self,  playerGrid,targetGridA, targetGridB,action,goal, firstIntentionFlag,firstIntentionMidlineFlag,noiseStep,stepCount):
         if goal != 0 and not firstIntentionFlag and not firstIntentionMidlineFlag:
             noiseStep.append(stepCount)
             firstIntentionFlag = True
-            allPosiibileplayerGrid = [np.add(playerGrid, action) for action in self.action]
+            allPosiibileplayerGrid = [np.add(playerGrid, action) for action in self.actionSpace]
             if goal == 1:
                 allPossibleDistance = [
                     [np.linalg.norm(np.array(targetGridB) - np.array(possibleGrid), ord=1), possibleGrid] for
@@ -67,16 +68,17 @@ class AwayFromTheGoalNoise():
                 firstIntentionMidlineFlag = True
         else:
             realAction=action
-        playerGrid =  np.add(playerGrid, realAction)
-        return playerGrid,firstIntentionFlag, firstIntentionMidlineFlag, noiseStep
+        realPlayerGrid =  tuple(np.add(playerGrid, realAction))
+        return realPlayerGrid,firstIntentionFlag, firstIntentionMidlineFlag, noiseStep
 
 
 class HumanController():
     def __init__(self, gridSize):
-        self.actionDict = {pg.K_UP: [0, -1], pg.K_DOWN: [0, 1], pg.K_LEFT: [-1, 0], pg.K_RIGHT: [1, 0]}
+        self.actionDict = {pg.K_UP: (0, -1), pg.K_DOWN: (0, 1), pg.K_LEFT: (-1, 0), pg.K_RIGHT: (1, 0)}
+        self.actionSpace = [(0, -1),  (0, 1),  (-1, 0), (1, 0)]
         self.gridSize = gridSize
 
-    def __call__(self, playerGrid):
+    def __call__(self, playerGrid,targetGrid1,targetGrid2):
         action = [0, 0]
         pause = True
         while pause:
@@ -86,46 +88,63 @@ class HumanController():
                             np.all(np.add(playerGrid, self.actionDict[event.key]) >= 0) and \
                             np.all(np.add(playerGrid, self.actionDict[event.key]) < self.gridSize):
                         action=self.actionDict[event.key]
-                        playerGrid = np.add(playerGrid, action)
+                        aimePlayerGrid = tuple(np.add(playerGrid, action))
                         pause=False
-        return playerGrid,action
+        return aimePlayerGrid,action
 
 
-class ModelController():
-    def __init__(self, policy, gridSize, stopwatchEvent, stopwatchUnit, drawNewState, finishTime):
+class ModelControllerSoftmax():
+    def __init__(self, policy, gridSize):
         self.policy = policy
         self.gridSize = gridSize
-        self.stopwatchEvent = stopwatchEvent
-        self.stopwatchUnit = stopwatchUnit
-        self.stopwatch = 0
-        self.drawNewState = drawNewState
-        self.finishTime = finishTime
+        self.actionSpace = [(0, -1),  (0, 1),  (-1, 0), (1, 0)]
 
-    def __call__(self, targetGridA, targetGridB, playerGrid, currentScore, currentStopwatch):
-        pause = True
-        newStopwatch = currentStopwatch
-        remainningTime = max(0, self.finishTime - currentStopwatch)
-        self.drawNewState(targetGridA, targetGridB, playerGrid, remainningTime, currentScore)
+
+    def __call__(self, playerGrid,targetGrid1,targetGrid2):
+        action=(0,0)
+        pause=True
+        try:
+            policyOneStep=self.policy[(playerGrid,(targetGrid1,targetGrid2))]
+        except KeyError as e:
+            policyOneStep=self.policy[(playerGrid,(targetGrid2,targetGrid1))]
+        probability = [policyOneStep[self.actionSpace[i]] for i in range(len(policyOneStep))]
+        actionSpaceStr=[str(action)  for action in self.actionSpace]
         while pause:
-            targetStates = (tuple(targetGridA), tuple(targetGridB))
-            if targetStates not in self.policy.keys():
-                targetStates = (tuple(targetGridB), tuple(targetGridA))
-            policyForCurrentStateDict = self.policy[targetStates][tuple(playerGrid)]
-            actionMaxList = [action for action in policyForCurrentStateDict.keys() if
-                             policyForCurrentStateDict[action] == np.max(list(policyForCurrentStateDict.values()))]
-            action = random.choice(actionMaxList)
-            playerNextPosition = np.add(playerGrid, action)
-            if np.any(playerNextPosition < 0) or np.any(playerNextPosition >= self.gridSize):
-                playerNextPosition = playerGrid
-            pause = False
-            for event in pg.event.get():
-                if event.type == self.stopwatchEvent:
-                    newStopwatch = newStopwatch + self.stopwatchUnit
-                    remainningTime = max(0, self.finishTime - newStopwatch)
-            self.drawNewState(targetGridA, targetGridB, playerNextPosition, remainningTime, currentScore)
-            pg.display.flip()
-        return playerNextPosition, action, newStopwatch
+            action = np.random.choice(actionSpaceStr, 1, p=probability).tolist()
+            action=eval(action[0])
+            if np.all(np.add(playerGrid, action) >= 0) and \
+                    np.all(np.add(playerGrid, action) < self.gridSize):
+                aimePlayerGrid = tuple(np.add(playerGrid, action))
+                pause=False
+            else:
+                aimePlayerGrid=playerGrid
+        return aimePlayerGrid, action
 
+class ModelControllerMax():
+    def __init__(self, policy, gridSize):
+        self.policy = policy
+        self.gridSize = gridSize
+        self.actionSpace = [(0, -1),  (0, 1),  (-1, 0), (1, 0)]
+
+
+    def __call__(self, playerGrid,targetGrid1,targetGrid2):
+        action=(0,0)
+        pause=True
+        try:
+            policyOneStep=self.policy[(playerGrid,(targetGrid1,targetGrid2))]
+        except KeyError as e:
+            policyOneStep=self.policy[(playerGrid,(targetGrid2,targetGrid1))]
+        probability = [policyOneStep[self.actionSpace[i]] for i in range(len(policyOneStep))]
+        actionSpaceStr=np.array([str(action)  for action in self.actionSpace])
+        while pause:
+            numberOfMaxProbability, indexOfMaxProbability = countCertainNumberInList(probability, max(probability))
+            action = np.random.choice(actionSpaceStr[indexOfMaxProbability].tolist(), 1)
+            action=eval(action[0])
+            if np.all(np.add(playerGrid, action) >= 0) and \
+                    np.all(np.add(playerGrid, action) < self.gridSize):
+                aimePlayerGrid = tuple(np.add(playerGrid, action))
+                pause=False
+        return aimePlayerGrid, action
 
 if __name__ == "__main__":
     pg.init()

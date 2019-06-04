@@ -5,7 +5,7 @@ import collections as co
 import numpy as np
 import pickle
 from Visualization import DrawBackground, DrawNewState, DrawImage,DrawText
-from Controller import HumanController,ModelController,NormalNoise,AwayFromTheGoalNoise
+from Controller import HumanController,ModelControllerSoftmax,ModelControllerMax,NormalNoise,AwayFromTheGoalNoise
 import UpdateWorld
 from Writer import WriteDataFrameToCSV
 from Trial import NormalTrial,SpecialTrial
@@ -50,6 +50,7 @@ def main():
     noiseCondition.append((1, 1, 1))
     picturePath = os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + '/Pictures/'
     resultsPath = os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + '/Results/'
+    machinePolicyPath=os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + '/machinePolicy/'
     bottom=[4,6,8]
     height=[6,7,8]
     direction=[0,90,180,270]
@@ -70,7 +71,8 @@ def main():
     playerRadius = 10
     textColorTuple = (255, 50, 50)
     experimentValues = co.OrderedDict()
-    experimentValues["name"] = input("Please enter your name:").capitalize()
+    # experimentValues["name"] = input("Please enter your name:").capitalize()
+    experimentValues["name"]='test'
     writerPath = resultsPath + experimentValues["name"] + '.csv'
     writer = WriteDataFrameToCSV(writerPath)
     introductionImage = pg.image.load(picturePath + 'introduction.png')
@@ -82,13 +84,15 @@ def main():
     drawText=DrawText(screen,drawBackground)
     drawNewState = DrawNewState(screen, drawBackground, targetColor, playerColor, targetRadius, playerRadius)
     drawImage = DrawImage(screen)
+    policy = pickle.load(open(machinePolicyPath+"noise0.1SingleWolfTwoSheepsGrid15allPosition.pkl","rb"))
+    modelControllerSoftmax = ModelControllerSoftmax(policy, dimension)
+    modelControllerMax = ModelControllerMax(policy, dimension)
     humanController = HumanController(dimension)
-    normalNoise=NormalNoise(humanController)
-    awayFromTheGoalNoise=AwayFromTheGoalNoise(humanController)
-    # policy = pickle.load(open("SingleWolfTwoSheepsGrid15.pkl","rb"))
-    # modelController = ModelController(policy, dimension, stopwatchEvent, stopwatchUnit, drawNewState, finishTime)
-    normalTrial = NormalTrial(humanController, drawNewState,drawText,normalNoise)
-    specialTrial=SpecialTrial(humanController, drawNewState,drawText,awayFromTheGoalNoise)
+    controller=modelControllerMax
+    normalNoise=NormalNoise(controller)
+    awayFromTheGoalNoise=AwayFromTheGoalNoise(controller)
+    normalTrial = NormalTrial(controller, drawNewState,drawText,normalNoise)
+    specialTrial=SpecialTrial(controller, drawNewState,drawText,awayFromTheGoalNoise)
     experiment = Experiment(normalTrial,specialTrial, writer, experimentValues, updateWorld, drawImage, resultsPath,
                              minDistanceBetweenGrids)
     drawImage(introductionImage)
