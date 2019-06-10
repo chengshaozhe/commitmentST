@@ -4,7 +4,7 @@ from pygame import time
 import collections as co
 import pickle
 from Visualization import DrawBackground,DrawNewState,DrawImage
-from Controller import HumanController,ModelControllerSoftmax
+from Controller import HumanController,ModelController
 import UpdateWorld
 import random
 
@@ -119,7 +119,6 @@ class SpecialTrial():
         aimActionList = list()
         firstIntentionFlag=False
         firstIntentionMidlineFlag=False
-        totalStep = int(np.linalg.norm(np.array(playerGrid) - np.array(bean1Grid), ord=1))
         noiseStep = list()
         stepCount = 0
         goalList = list()
@@ -131,9 +130,9 @@ class SpecialTrial():
         goal = inferGoal(trajectory, aimPlayerGrid, bean1Grid, bean2Grid)
         goalList.append(goal)
         stepCount=stepCount+1
-        realPlayerGrid,firstIntentionFlag, firstIntentionMidlineFlag, noiseStep = self.awayFromTheGoalNoise(trajectory[-1],
+        realPlayerGrid,firstIntentionFlag, noiseStep = self.awayFromTheGoalNoise(trajectory[-1],
                                                 bean1Grid,bean2Grid,aimAction,goal, firstIntentionFlag,
-                                              firstIntentionMidlineFlag,noiseStep, stepCount)
+                                              noiseStep, stepCount)
 
         self.drawNewState(bean1Grid,bean2Grid,realPlayerGrid)
         reactionTime.append(time.get_ticks() - initialTime)
@@ -145,9 +144,9 @@ class SpecialTrial():
             goal = inferGoal(trajectory, aimPlayerGrid, bean1Grid, bean2Grid)
             goalList.append(goal)
             stepCount = stepCount + 1
-            realPlayerGrid, firstIntentionFlag, firstIntentionMidlineFlag, noiseStep = self.awayFromTheGoalNoise(
+            realPlayerGrid, firstIntentionFlag,noiseStep = self.awayFromTheGoalNoise(
                 trajectory[-1], bean1Grid, bean2Grid, aimAction, goal, firstIntentionFlag,
-                firstIntentionMidlineFlag, noiseStep, stepCount)
+                 noiseStep, stepCount)
             self.drawNewState(bean1Grid, bean2Grid, realPlayerGrid)
             reactionTime.append(time.get_ticks() - initialTime)
             trajectory.append(list(realPlayerGrid))

@@ -15,11 +15,15 @@ def countCertainNumberInList(listToManipulate, certainNumber):
 
     return count, indexList
 
+def calculateSoftmaxProbability(probabilityList,beita):
+	newProbabilityList=list(np.divide(np.exp(np.multiply(beita,probabilityList)),np.sum(np.exp(np.multiply(beita,probabilityList)))))
+	return newProbabilityList
 
 class NormalNoise():
     def __init__(self,controller):
         self.actionSpace=controller.actionSpace
         self.gridSize=controller.gridSize
+        self.boundary=[0,0,self.gridSize,self.gridSize]
 
 
     def __call__(self, playerGrid,action,trajectory,noiseStep, stepCount):
@@ -30,46 +34,49 @@ class NormalNoise():
                 actionList = [str(action) for action in actionSpace]
                 actionStr = np.random.choice(actionList)
                 realAction = eval(actionStr)
-                if np.all(np.add(playerGrid, realAction) >= 0) and \
-                        np.all(np.add(playerGrid, realAction) < self.gridSize):
+                realPlayerGrid = tuple(np.add(playerGrid, realAction))
+                if checkWithinScreen(realPlayerGrid,self.boundary):
                     break
         else:
             realAction = action
-        realPlayerGrid =tuple(np.add(playerGrid, realAction))
+            realPlayerGrid =tuple(np.add(playerGrid, realAction))
         return realPlayerGrid,realAction
+
+def selectActionMinDistanceFromTarget(goal,playerGrid,bean1Grid,bean2Grid,actionSpace):
+    allPosiibileplayerGrid = [np.add(playerGrid, action) for action in actionSpace]
+    if goal==1:
+        allPossibleDistance = [
+            [np.linalg.norm(np.array(bean2Grid) - np.array(possibleGrid), ord=1), possibleGrid] for
+            possibleGrid in allPosiibileplayerGrid]
+        orderedAllPossibleDistanceAndGrid = sorted(allPossibleDistance, key=lambda x: x[0])
+    else:
+        allPossibleDistance = [
+            [np.linalg.norm(np.array(bean1Grid) - np.array(possibleGrid), ord=1), possibleGrid] for
+            possibleGrid in allPosiibileplayerGrid]
+        orderedAllPossibleDistanceAndGrid = sorted(allPossibleDistance, key=lambda x: x[0])
+    orderedAllPossibleDistance = [distance[0] for distance in orderedAllPossibleDistanceAndGrid]
+    count, indexList = countCertainNumberInList(orderedAllPossibleDistance,
+                                                orderedAllPossibleDistance[0])
+    minIndex = int(count - 1)
+    realAction = list(
+        np.array(orderedAllPossibleDistanceAndGrid[random.randint(0, minIndex)][1]) - np.array(playerGrid))
+    return realAction
+
 
 class AwayFromTheGoalNoise():
     def __init__(self,controller):
         self.actionSpace=controller.actionSpace
         self.gridSize=controller.gridSize
 
-    def __call__(self,  playerGrid,targetGridA, targetGridB,action,goal, firstIntentionFlag,firstIntentionMidlineFlag,noiseStep,stepCount):
-        if goal != 0 and not firstIntentionFlag and not firstIntentionMidlineFlag:
+    def __call__(self,  playerGrid,bean1Grid, bean2Grid,action,goal, firstIntentionFlag,noiseStep,stepCount):
+        if goal != 0 and not firstIntentionFlag :
             noiseStep.append(stepCount)
             firstIntentionFlag = True
-            allPosiibileplayerGrid = [np.add(playerGrid, action) for action in self.actionSpace]
-            if goal == 1:
-                allPossibleDistance = [
-                    [np.linalg.norm(np.array(targetGridB) - np.array(possibleGrid), ord=1), possibleGrid] for
-                    possibleGrid in allPosiibileplayerGrid]
-            else:
-                allPossibleDistance = [
-                    [np.linalg.norm(np.array(targetGridA) - np.array(possibleGrid), ord=1), possibleGrid] for
-                    possibleGrid in allPosiibileplayerGrid]
-            orderedAllPossibleDistanceAndGrid = sorted(allPossibleDistance, key=lambda x: x[0])
-            orderedAllPossibleDistance = [distance[0] for distance in orderedAllPossibleDistanceAndGrid]
-            count, indexList = countCertainNumberInList(orderedAllPossibleDistance,
-                                                        orderedAllPossibleDistance[0])
-            minIndex = int(count - 1)
-            realAction = list(
-                np.array(orderedAllPossibleDistanceAndGrid[random.randint(0, minIndex)][1]) - np.array(playerGrid))
-            if np.linalg.norm(np.array(targetGridB) - np.array(playerGrid), ord=1) == np.linalg.norm(
-                    np.array(targetGridA) - np.array(playerGrid), ord=1):
-                firstIntentionMidlineFlag = True
+            realAction=selectActionMinDistanceFromTarget(goal,playerGrid,bean1Grid,bean2Grid,self.actionSpace)
         else:
             realAction=action
         realPlayerGrid =  tuple(np.add(playerGrid, realAction))
-        return realPlayerGrid,firstIntentionFlag, firstIntentionMidlineFlag, noiseStep
+        return realPlayerGrid,firstIntentionFlag, noiseStep
 
 
 class HumanController():
@@ -77,6 +84,8 @@ class HumanController():
         self.actionDict = {pg.K_UP: (0, -1), pg.K_DOWN: (0, 1), pg.K_LEFT: (-1, 0), pg.K_RIGHT: (1, 0)}
         self.actionSpace = [(0, -1),  (0, 1),  (-1, 0), (1, 0)]
         self.gridSize = gridSize
+        self.boundary=[0,0,self.gridSize,self.gridSize]
+
 
     def __call__(self, playerGrid,targetGrid1,targetGrid2):
         action = [0, 0]
@@ -84,65 +93,52 @@ class HumanController():
         while pause:
             for event in pg.event.get():
                 if event.type == pg.KEYDOWN:
-                    if event.key in self.actionDict.keys() and \
-                            np.all(np.add(playerGrid, self.actionDict[event.key]) >= 0) and \
-                            np.all(np.add(playerGrid, self.actionDict[event.key]) < self.gridSize):
+                    if event.key in self.actionDict.keys():
                         action=self.actionDict[event.key]
                         aimePlayerGrid = tuple(np.add(playerGrid, action))
-                        pause=False
+                        if checkWithinScreen(aimePlayerGrid,self.boundary):
+                            pause=False
         return aimePlayerGrid,action
 
+def checkWithinScreen(playerGrid,boundary):
+    playerGridArr=np.array(playerGrid)
+    if np.all(playerGridArr>=boundary[0])and \
+            np.all(playerGridArr < boundary[3]):
+        withinScreenFlag=True
+    else:
+        withinScreenFlag=False
+    return withinScreenFlag
 
-class ModelControllerSoftmax():
-    def __init__(self, policy, gridSize):
+
+
+class ModelController():
+    def __init__(self, policy, gridSize,softmaxBeta):
         self.policy = policy
         self.gridSize = gridSize
         self.actionSpace = [(0, -1),  (0, 1),  (-1, 0), (1, 0)]
+        self. softmaxBeta=softmaxBeta
+        self.boundary=[0,0,self.gridSize,self.gridSize]
 
 
     def __call__(self, playerGrid,targetGrid1,targetGrid2):
-        action=(0,0)
-        pause=True
-        try:
-            policyOneStep=self.policy[(playerGrid,(targetGrid1,targetGrid2))]
-        except KeyError as e:
-            policyOneStep=self.policy[(playerGrid,(targetGrid2,targetGrid1))]
-        probability = [policyOneStep[self.actionSpace[i]] for i in range(len(policyOneStep))]
-        actionSpaceStr=[str(action)  for action in self.actionSpace]
+        pause = True
         while pause:
-            action = np.random.choice(actionSpaceStr, 1, p=probability).tolist()
-            action=eval(action[0])
-            if np.all(np.add(playerGrid, action) >= 0) and \
-                    np.all(np.add(playerGrid, action) < self.gridSize):
-                aimePlayerGrid = tuple(np.add(playerGrid, action))
-                pause=False
+            try:
+                policyForCurrentStateDict = self.policy[(playerGrid, (targetGrid1, targetGrid2))]
+            except KeyError as e:
+                policyForCurrentStateDict = self.policy[(playerGrid, (targetGrid2, targetGrid1))]
+            if self.softmaxBeta < 0:
+                actionMaxList = [action for action in policyForCurrentStateDict.keys() if
+                                 policyForCurrentStateDict[action] == np.max(list(policyForCurrentStateDict.values()))]
+                action = random.choice(actionMaxList)
             else:
-                aimePlayerGrid=playerGrid
-        return aimePlayerGrid, action
-
-class ModelControllerMax():
-    def __init__(self, policy, gridSize):
-        self.policy = policy
-        self.gridSize = gridSize
-        self.actionSpace = [(0, -1),  (0, 1),  (-1, 0), (1, 0)]
-
-
-    def __call__(self, playerGrid,targetGrid1,targetGrid2):
-        action=(0,0)
-        pause=True
-        try:
-            policyOneStep=self.policy[(playerGrid,(targetGrid1,targetGrid2))]
-        except KeyError as e:
-            policyOneStep=self.policy[(playerGrid,(targetGrid2,targetGrid1))]
-        probability = [policyOneStep[self.actionSpace[i]] for i in range(len(policyOneStep))]
-        actionSpaceStr=np.array([str(action)  for action in self.actionSpace])
-        while pause:
-            numberOfMaxProbability, indexOfMaxProbability = countCertainNumberInList(probability, max(probability))
-            action = np.random.choice(actionSpaceStr[indexOfMaxProbability].tolist(), 1)
-            action=eval(action[0])
-            if np.all(np.add(playerGrid, action) >= 0) and \
-                    np.all(np.add(playerGrid, action) < self.gridSize):
-                aimePlayerGrid = tuple(np.add(playerGrid, action))
+                actionProbability = np.divide(list(policyForCurrentStateDict.values()),
+                                              np.sum(list(policyForCurrentStateDict.values())))
+                softmaxProbabilityList = calculateSoftmaxProbability(list(actionProbability), self.softmaxBeta)
+                action = list(policyForCurrentStateDict.keys())[
+                    list(np.random.multinomial(1, softmaxProbabilityList)).index(1)]
+            aimePlayerGrid = tuple(np.add(playerGrid, action))
+            if checkWithinScreen(aimePlayerGrid,self.boundary):
                 pause=False
         return aimePlayerGrid, action
 

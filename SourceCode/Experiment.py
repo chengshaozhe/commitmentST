@@ -5,7 +5,7 @@ import collections as co
 import numpy as np
 import pickle
 from Visualization import DrawBackground, DrawNewState, DrawImage,DrawText
-from Controller import HumanController,ModelControllerSoftmax,ModelControllerMax,NormalNoise,AwayFromTheGoalNoise
+from Controller import HumanController,ModelController,NormalNoise,AwayFromTheGoalNoise
 import UpdateWorld
 from Writer import WriteDataFrameToCSV
 from Trial import NormalTrial,SpecialTrial
@@ -70,6 +70,7 @@ def main():
     targetRadius = 10
     playerRadius = 10
     textColorTuple = (255, 50, 50)
+    softmaxBeta=-1
     experimentValues = co.OrderedDict()
     # experimentValues["name"] = input("Please enter your name:").capitalize()
     experimentValues["name"]='test'
@@ -85,10 +86,9 @@ def main():
     drawNewState = DrawNewState(screen, drawBackground, targetColor, playerColor, targetRadius, playerRadius)
     drawImage = DrawImage(screen)
     policy = pickle.load(open(machinePolicyPath+"noise0.1SingleWolfTwoSheepsGrid15allPosition.pkl","rb"))
-    modelControllerSoftmax = ModelControllerSoftmax(policy, dimension)
-    modelControllerMax = ModelControllerMax(policy, dimension)
+    modelController = ModelController(policy, dimension,softmaxBeta)
     humanController = HumanController(dimension)
-    controller=modelControllerMax
+    controller=humanController
     normalNoise=NormalNoise(controller)
     awayFromTheGoalNoise=AwayFromTheGoalNoise(controller)
     normalTrial = NormalTrial(controller, drawNewState,drawText,normalNoise)
