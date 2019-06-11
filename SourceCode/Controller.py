@@ -23,23 +23,18 @@ class NormalNoise():
     def __init__(self,controller):
         self.actionSpace=controller.actionSpace
         self.gridSize=controller.gridSize
-        self.boundary=[0,0,self.gridSize,self.gridSize]
 
 
     def __call__(self, playerGrid,action,trajectory,noiseStep, stepCount):
         if stepCount in noiseStep:
-            while True:
-                actionSpace = self.actionSpace.copy()
-                actionSpace.remove(action)
-                actionList = [str(action) for action in actionSpace]
-                actionStr = np.random.choice(actionList)
-                realAction = eval(actionStr)
-                realPlayerGrid = tuple(np.add(playerGrid, realAction))
-                if checkWithinScreen(realPlayerGrid,self.boundary):
-                    break
+            actionSpace = self.actionSpace.copy()
+            actionSpace.remove(action)
+            actionList = [str(action) for action in actionSpace]
+            actionStr = np.random.choice(actionList)
+            realAction = eval(actionStr)
         else:
             realAction = action
-            realPlayerGrid =tuple(np.add(playerGrid, realAction))
+        realPlayerGrid =tuple(np.add(playerGrid, realAction))
         return realPlayerGrid,realAction
 
 def selectActionMinDistanceFromTarget(goal,playerGrid,bean1Grid,bean2Grid,actionSpace):
@@ -84,7 +79,6 @@ class HumanController():
         self.actionDict = {pg.K_UP: (0, -1), pg.K_DOWN: (0, 1), pg.K_LEFT: (-1, 0), pg.K_RIGHT: (1, 0)}
         self.actionSpace = [(0, -1),  (0, 1),  (-1, 0), (1, 0)]
         self.gridSize = gridSize
-        self.boundary=[0,0,self.gridSize,self.gridSize]
 
 
     def __call__(self, playerGrid,targetGrid1,targetGrid2):
@@ -96,19 +90,26 @@ class HumanController():
                     if event.key in self.actionDict.keys():
                         action=self.actionDict[event.key]
                         aimePlayerGrid = tuple(np.add(playerGrid, action))
-                        if checkWithinScreen(aimePlayerGrid,self.boundary):
-                            pause=False
+                        pause=False
         return aimePlayerGrid,action
 
-def checkWithinScreen(playerGrid,boundary):
-    playerGridArr=np.array(playerGrid)
-    if np.all(playerGridArr>=boundary[0])and \
-            np.all(playerGridArr < boundary[3]):
-        withinScreenFlag=True
-    else:
-        withinScreenFlag=False
-    return withinScreenFlag
+class CheckBoundary():
+    def __init__(self, xBoundary, yBoundary):
+        self.xMin, self.xMax = xBoundary
+        self.yMin, self.yMax = yBoundary
 
+    def __call__(self, position):
+        adjustedX, adjustedY = position
+        if position[0] >= self.xMax:
+            adjustedX = self.xMax
+        if position[0] <= self.xMin:
+            adjustedX =  self.xMin
+        if position[1] >= self.yMax:
+            adjustedY =  self.yMax
+        if position[1] <= self.yMin:
+            adjustedY = self.yMin
+        checkedPosition =(adjustedX, adjustedY)
+        return checkedPosition
 
 
 class ModelController():
@@ -117,29 +118,25 @@ class ModelController():
         self.gridSize = gridSize
         self.actionSpace = [(0, -1),  (0, 1),  (-1, 0), (1, 0)]
         self. softmaxBeta=softmaxBeta
-        self.boundary=[0,0,self.gridSize,self.gridSize]
 
 
     def __call__(self, playerGrid,targetGrid1,targetGrid2):
-        pause = True
-        while pause:
-            try:
-                policyForCurrentStateDict = self.policy[(playerGrid, (targetGrid1, targetGrid2))]
-            except KeyError as e:
-                policyForCurrentStateDict = self.policy[(playerGrid, (targetGrid2, targetGrid1))]
-            if self.softmaxBeta < 0:
-                actionMaxList = [action for action in policyForCurrentStateDict.keys() if
-                                 policyForCurrentStateDict[action] == np.max(list(policyForCurrentStateDict.values()))]
-                action = random.choice(actionMaxList)
-            else:
-                actionProbability = np.divide(list(policyForCurrentStateDict.values()),
-                                              np.sum(list(policyForCurrentStateDict.values())))
-                softmaxProbabilityList = calculateSoftmaxProbability(list(actionProbability), self.softmaxBeta)
-                action = list(policyForCurrentStateDict.keys())[
-                    list(np.random.multinomial(1, softmaxProbabilityList)).index(1)]
-            aimePlayerGrid = tuple(np.add(playerGrid, action))
-            if checkWithinScreen(aimePlayerGrid,self.boundary):
-                pause=False
+        try:
+            policyForCurrentStateDict = self.policy[(playerGrid, (targetGrid1, targetGrid2))]
+        except KeyError as e:
+            policyForCurrentStateDict = self.policy[(playerGrid, (targetGrid2, targetGrid1))]
+        if self.softmaxBeta < 0:
+            actionMaxList = [action for action in policyForCurrentStateDict.keys() if
+                             policyForCurrentStateDict[action] == np.max(list(policyForCurrentStateDict.values()))]
+            action = random.choice(actionMaxList)
+        else:
+            actionProbability = np.divide(list(policyForCurrentStateDict.values()),
+                                          np.sum(list(policyForCurrentStateDict.values())))
+            softmaxProbabilityList = calculateSoftmaxProbability(          list(actionProbability), self.softmaxBeta)
+            action = list(policyForCurrentStateDict.keys())[
+                list(np.random.multinomial(1, softmaxProbabilityList)).index(1)]
+        aimePlayerGrid = tuple(np.add(playerGrid, action))
+        pg.time.delay(125)
         return aimePlayerGrid, action
 
 if __name__ == "__main__":
