@@ -43,19 +43,18 @@ if __name__=="__main__":
     resultsFilenameList = createAllCertainFormatFileList(resultsPath, fileFormat)
     resultsDataFrameList = [pd.read_csv(file) for file in resultsFilenameList]
     specialTrialIndex=9
-    specialTrialResultsDataFrame =[file.loc[specialTrialIndex] for file in resultsDataFrameList]
-    resultsDataFrame = pd.concat(specialTrialResultsDataFrame,sort=True)
-    # goal = [eval(resultsDataFrame.iat[i, 12]) for i in range(len(resultsDataFrame)) ]
-    print(resultsDataFrame)
-    # firstGoalConsistFinalGoal=[calculateFirstIntentionMatchFinalIntention(supriseTrialGoal)  for supriseTrialGoal in goal]
-    # consistAndInconsistCount = dict(Counter(firstGoalConsistFinalGoal) )
-    # print(consistAndInconsistCount)
-    # names=['consist','inconsist']
-    # frequency=(np.array([consistAndInconsistCount['consist'],consistAndInconsistCount['inconsist']])/len(goal))
-    # plt.bar([0,0.3],frequency,width=0.1)
-    # plt.xticks([0,0.3], names)
-    # plt.xlabel('Consist And Inconsist')
-    # plt.ylabel('frequency')
-    # plt.title('firstIntentionPredictFinalGoal')
-
+    trialNumber=10
+    resultsDataFrame = pd.concat(resultsDataFrameList,sort=False)
+    specialTrialResultsDataFrame =resultsDataFrame.iloc[list(range(specialTrialIndex,len(resultsDataFrame),trialNumber))]
+    goal = [eval(specialTrialResultsDataFrame.iat[i, 12]) for i in range(len(specialTrialResultsDataFrame)) ]
+    firstGoalConsistFinalGoal=[calculateFirstIntentionMatchFinalIntention(supriseTrialGoal)  for supriseTrialGoal in goal]
+    consistAndInconsistCount = dict(Counter(firstGoalConsistFinalGoal) )
+    print(consistAndInconsistCount)
+    names=['consist','inconsist']
+    frequency=(np.array([consistAndInconsistCount['consist'],consistAndInconsistCount['inconsist']])/len(goal))
+    plt.bar([0,0.3],frequency,width=0.1)
+    plt.xticks([0,0.3], names)
+    plt.xlabel('Consist And Inconsist')
+    plt.ylabel('frequency')
+    plt.title('firstIntentionPredictFinalGoal')
     plt.show()
