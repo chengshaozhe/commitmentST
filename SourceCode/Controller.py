@@ -5,6 +5,21 @@ import Visualization
 
 
 
+def inferGoal(originGrid, aimGrid, targetGridA, targetGridB):
+    pacmanBean1aimDisplacement = np.linalg.norm(np.array(targetGridA) - np.array(aimGrid), ord=1)
+    pacmanBean2aimDisplacement = np.linalg.norm(np.array(targetGridB) - np.array(aimGrid), ord=1)
+    pacmanBean1LastStepDisplacement = np.linalg.norm(np.array(targetGridA) - np.array(originGrid), ord=1)
+    pacmanBean2LastStepDisplacement = np.linalg.norm(np.array(targetGridB) - np.array(originGrid), ord=1)
+    bean1Goal = pacmanBean1LastStepDisplacement - pacmanBean1aimDisplacement
+    bean2Goal = pacmanBean2LastStepDisplacement - pacmanBean2aimDisplacement
+    if bean1Goal > bean2Goal:
+        goal = 1
+    elif bean1Goal < bean2Goal:
+        goal = 2
+    else:
+        goal = 0
+    return goal
+
 def countCertainNumberInList(listToManipulate, certainNumber):
     count = 0
     indexList = list()
@@ -38,23 +53,14 @@ class NormalNoise():
         return realPlayerGrid,realAction
 
 def selectActionMinDistanceFromTarget(goal,playerGrid,bean1Grid,bean2Grid,actionSpace):
-    allPosiibileplayerGrid = [np.add(playerGrid, action) for action in actionSpace]
-    if goal==1:
-        allPossibleDistance = [
-            [np.linalg.norm(np.array(bean2Grid) - np.array(possibleGrid), ord=1), possibleGrid] for
-            possibleGrid in allPosiibileplayerGrid]
-        orderedAllPossibleDistanceAndGrid = sorted(allPossibleDistance, key=lambda x: x[0])
+    allPosiibilePlayerGrid = [np.add(playerGrid, action) for action in actionSpace]
+    allActionGoal = [inferGoal(playerGrid, possibleGrid, bean1Grid, bean2Grid) for possibleGrid in
+                     allPosiibilePlayerGrid]
+    if goal == 1:
+        realActionIndex = allActionGoal.index(2)
     else:
-        allPossibleDistance = [
-            [np.linalg.norm(np.array(bean1Grid) - np.array(possibleGrid), ord=1), possibleGrid] for
-            possibleGrid in allPosiibileplayerGrid]
-        orderedAllPossibleDistanceAndGrid = sorted(allPossibleDistance, key=lambda x: x[0])
-    orderedAllPossibleDistance = [distance[0] for distance in orderedAllPossibleDistanceAndGrid]
-    count, indexList = countCertainNumberInList(orderedAllPossibleDistance,
-                                                orderedAllPossibleDistance[0])
-    minIndex = int(count - 1)
-    realAction = list(
-        np.array(orderedAllPossibleDistanceAndGrid[random.randint(0, minIndex)][1]) - np.array(playerGrid))
+        realActionIndex = allActionGoal.index(1)
+    realAction = actionSpace[realActionIndex]
     return realAction
 
 
@@ -136,7 +142,7 @@ class ModelController():
             action = list(policyForCurrentStateDict.keys())[
                 list(np.random.multinomial(1, softmaxProbabilityList)).index(1)]
         aimePlayerGrid = tuple(np.add(playerGrid, action))
-        pg.time.delay(125)
+        pg.time.delay(0)
         return aimePlayerGrid, action
 
 if __name__ == "__main__":
