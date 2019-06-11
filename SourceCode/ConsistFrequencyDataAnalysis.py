@@ -20,6 +20,12 @@ def createAllCertainFormatFileList(filePath,fileFormat):
 	return filenameList
 
 def calculateFirstIntentionMatchFinalIntention(intentionList):
+    firstGoal=calculateFirstIntention(intentionList)
+    finalGoal=calculateFirstIntention(list(reversed(intentionList)))
+    firstIntention="consist"if firstGoal==finalGoal else "inconsist"
+    return firstIntention
+
+def calculateFirstIntention(intentionList):
     try:
         target1Goal=intentionList.index(1)
     except ValueError as e:
@@ -34,8 +40,7 @@ def calculateFirstIntentionMatchFinalIntention(intentionList):
         firstGoal=2
     else:
         firstGoal=0
-    firstIntention="consist"if firstGoal==intentionList[-1] else "inconsist"
-    return firstIntention
+    return firstGoal
 
 if __name__=="__main__":
     resultsPath = os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + '/Results/'
@@ -51,6 +56,10 @@ if __name__=="__main__":
     consistAndInconsistCount = dict(Counter(firstGoalConsistFinalGoal) )
     print(consistAndInconsistCount)
     names=['consist','inconsist']
+    if "consist" not in consistAndInconsistCount.keys():
+        consistAndInconsistCount["consist"]=0
+    if "inconsist" not in consistAndInconsistCount.keys():
+        consistAndInconsistCount["inconsist"]=0
     frequency=(np.array([consistAndInconsistCount['consist'],consistAndInconsistCount['inconsist']])/len(goal))
     plt.bar([0,0.3],frequency,width=0.1)
     plt.xticks([0,0.3], names)

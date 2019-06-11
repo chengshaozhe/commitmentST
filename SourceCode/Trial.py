@@ -9,11 +9,11 @@ import UpdateWorld
 import random
 
 
-def inferGoal(trajectory, aimGrid, targetGridA, targetGridB):
+def inferGoal(originGrid, aimGrid, targetGridA, targetGridB):
     pacmanBean1aimDisplacement = np.linalg.norm(np.array(targetGridA) - np.array(aimGrid), ord=1)
     pacmanBean2aimDisplacement = np.linalg.norm(np.array(targetGridB) - np.array(aimGrid), ord=1)
-    pacmanBean1LastStepDisplacement = np.linalg.norm(np.array(targetGridA) - np.array(trajectory[-1]), ord=1)
-    pacmanBean2LastStepDisplacement = np.linalg.norm(np.array(targetGridB) - np.array(trajectory[-1]), ord=1)
+    pacmanBean1LastStepDisplacement = np.linalg.norm(np.array(targetGridA) - np.array(originGrid), ord=1)
+    pacmanBean2LastStepDisplacement = np.linalg.norm(np.array(targetGridB) - np.array(originGrid), ord=1)
     bean1Goal = pacmanBean1LastStepDisplacement - pacmanBean1aimDisplacement
     bean2Goal = pacmanBean2LastStepDisplacement - pacmanBean2aimDisplacement
     if bean1Goal > bean2Goal:
@@ -60,7 +60,7 @@ class NormalTrial():
         self.drawNewState(bean1Grid,bean2Grid,initialPlayerGrid)
         pg.event.set_allowed([pg.KEYDOWN, pg.KEYUP,pg.QUIT])
         aimPlayerGrid,aimAction =self.controller(initialPlayerGrid,bean1Grid,bean2Grid)
-        goal = inferGoal(trajectory, aimPlayerGrid, bean1Grid, bean2Grid)
+        goal = inferGoal(trajectory[-1], aimPlayerGrid, bean1Grid, bean2Grid)
         goalList.append(goal)
         stepCount=stepCount+1
         noisePlayerGrid,aimAction=self.normalNoise( trajectory[-1],aimAction,trajectory,noiseStep, stepCount)
@@ -72,7 +72,7 @@ class NormalTrial():
         pause = self.checkTerminationOfTrial(bean1Grid, bean2Grid, realPlayerGrid)
         while pause:
             aimPlayerGrid, aimAction = self.controller(realPlayerGrid, bean1Grid, bean2Grid)
-            goal = inferGoal(trajectory, aimPlayerGrid, bean1Grid, bean2Grid)
+            goal = inferGoal(trajectory[-1], aimPlayerGrid, bean1Grid, bean2Grid)
             goalList.append(goal)
             stepCount = stepCount + 1
             noisePlayerGrid,aimAction = self.normalNoise(trajectory[-1], aimAction, trajectory, noiseStep, stepCount)
@@ -130,7 +130,7 @@ class SpecialTrial():
         self.drawNewState(bean1Grid,bean2Grid,initialPlayerGrid)
         pg.event.set_allowed([pg.KEYDOWN, pg.KEYUP, pg.QUIT])
         aimPlayerGrid, aimAction = self.controller(initialPlayerGrid,bean1Grid,bean2Grid)
-        goal = inferGoal(trajectory, aimPlayerGrid, bean1Grid, bean2Grid)
+        goal = inferGoal(trajectory[-1], aimPlayerGrid, bean1Grid, bean2Grid)
         goalList.append(goal)
         stepCount=stepCount+1
         noisePlayerGrid,firstIntentionFlag, noiseStep = self.awayFromTheGoalNoise(trajectory[-1],
@@ -144,7 +144,7 @@ class SpecialTrial():
         pause = self.checkTerminationOfTrial(bean1Grid, bean2Grid, realPlayerGrid)
         while pause:
             aimPlayerGrid, aimAction = self.controller(realPlayerGrid, bean1Grid, bean2Grid)
-            goal = inferGoal(trajectory, aimPlayerGrid, bean1Grid, bean2Grid)
+            goal = inferGoal(trajectory[-1], aimPlayerGrid, bean1Grid, bean2Grid)
             goalList.append(goal)
             stepCount = stepCount + 1
             noisePlayerGrid, firstIntentionFlag,noiseStep = self.awayFromTheGoalNoise(
