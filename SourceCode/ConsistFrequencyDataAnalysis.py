@@ -51,6 +51,7 @@ if __name__=="__main__":
     trialNumber=10
     resultsDataFrame = pd.concat(resultsDataFrameList,sort=False)
     specialTrialResultsDataFrame =resultsDataFrame.iloc[list(range(specialTrialIndex,len(resultsDataFrame),trialNumber))]
+    print(specialTrialResultsDataFrame,resultsDataFrame)
     goal = [eval(specialTrialResultsDataFrame.iat[i, 12]) for i in range(len(specialTrialResultsDataFrame)) ]
     firstGoalConsistFinalGoal=[calculateFirstIntentionMatchFinalIntention(supriseTrialGoal)  for supriseTrialGoal in goal]
     consistAndInconsistCount = dict(Counter(firstGoalConsistFinalGoal) )

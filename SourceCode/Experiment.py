@@ -88,7 +88,7 @@ def main():
 	modelController = ModelController(policy, dimension,softmaxBeta)
 	humanController= HumanController(dimension)
 	checkBoundary=CheckBoundary([0,dimension-1],[0,dimension-1])
-	controller=modelController
+	controller=humanController
 	normalNoise=NormalNoise(controller)
 	awayFromTheGoalNoise=AwayFromTheGoalNoise(controller)
 	normalTrial = NormalTrial(controller, drawNewState,drawText,normalNoise,checkBoundary)
