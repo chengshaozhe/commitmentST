@@ -55,8 +55,8 @@ class NormalTrial():
         noiseStep = random.sample(list(range(1, totalStep + 1)), designValues)
         stepCount=0
         goalList=list()
-        self.drawText("+",[0,0,0],[7,7])
-        pg.time.wait(1300)
+        # self.drawText("+",[0,0,0],[7,7])
+        # pg.time.wait(1300)
         self.drawNewState(bean1Grid,bean2Grid,initialPlayerGrid)
         pg.event.set_allowed([pg.KEYDOWN, pg.KEYUP,pg.QUIT])
         aimPlayerGrid,aimAction =self.controller(initialPlayerGrid,bean1Grid,bean2Grid)
@@ -75,7 +75,7 @@ class NormalTrial():
             goal = inferGoal(trajectory[-1], aimPlayerGrid, bean1Grid, bean2Grid)
             goalList.append(goal)
             stepCount = stepCount + 1
-            noisePlayerGrid,aimAction = self.normalNoise(trajectory[-1], aimAction, trajectory, noiseStep, stepCount)
+            noisePlayerGrid,realAction = self.normalNoise(trajectory[-1], aimAction, trajectory, noiseStep, stepCount)
             realPlayerGrid=self.checkBoundary(noisePlayerGrid)
             self.drawNewState(bean1Grid, bean2Grid, realPlayerGrid)
             # pg.time.delay(1000)
@@ -83,7 +83,7 @@ class NormalTrial():
             trajectory.append(list(realPlayerGrid))
             aimActionList.append(aimAction)
             pause = self.checkTerminationOfTrial(bean1Grid, bean2Grid, realPlayerGrid)
-        pg.time.wait(500)
+        # pg.time.wait(500)
         pg.event.set_blocked([pg.KEYDOWN, pg.KEYUP])
         results["bean1GridX"] = bean1Grid[0]
         results["bean1GridY"] = bean1Grid[1]
@@ -125,8 +125,8 @@ class SpecialTrial():
         noiseStep = list()
         stepCount = 0
         goalList = list()
-        self.drawText("+", [0, 0, 0], [7, 7])
-        pg.time.wait(1300)
+        # self.drawText("+", [0, 0, 0], [7, 7])
+        # pg.time.wait(1300)
         self.drawNewState(bean1Grid,bean2Grid,initialPlayerGrid)
         pg.event.set_allowed([pg.KEYDOWN, pg.KEYUP, pg.QUIT])
         aimPlayerGrid, aimAction = self.controller(initialPlayerGrid,bean1Grid,bean2Grid)
@@ -156,7 +156,7 @@ class SpecialTrial():
             trajectory.append(list(realPlayerGrid))
             aimActionList.append(aimAction)
             pause = self.checkTerminationOfTrial(bean1Grid, bean2Grid, realPlayerGrid)
-        pg.time.wait(500)
+        # pg.time.wait(500)
         pg.event.set_blocked([pg.KEYDOWN, pg.KEYUP])
         results["bean1GridX"] = bean1Grid[0]
         results["bean1GridY"] = bean1Grid[1]

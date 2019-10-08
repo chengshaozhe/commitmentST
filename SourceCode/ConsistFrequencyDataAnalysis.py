@@ -62,9 +62,10 @@ if __name__=="__main__":
     if "inconsist" not in consistAndInconsistCount.keys():
         consistAndInconsistCount["inconsist"]=0
     frequency=(np.array([consistAndInconsistCount['consist'],consistAndInconsistCount['inconsist']])/len(goal))
-    plt.bar([0,0.3],frequency,width=0.1)
+    plt.bar([0,0.3],frequency,width=0.1,alpha=0.3,color='b')
     plt.xticks([0,0.3], names)
     plt.xlabel('Consist And Inconsist')
     plt.ylabel('frequency')
     plt.title('firstIntentionPredictFinalGoal')
     plt.show()
+    print(frequency)
