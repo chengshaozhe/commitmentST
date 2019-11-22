@@ -45,7 +45,7 @@ def calculateMidlineRatioAcrossByNoise(trajectory, bean1Grid, bean2Grid, noise, 
 
 
 if __name__ == "__main__":
-    resultsPath = os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + '/Results/'
+    resultsPath = os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + '/Results/softmax'
     fileFormat = '.csv'
     resultsFilenameList = createAllCertainFormatFileList(resultsPath, fileFormat)
     resultsDataFrameList = [pd.read_csv(file) for file in resultsFilenameList]

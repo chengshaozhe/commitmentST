@@ -1,0 +1,9 @@
+data
+demo
+*__pycache__
+*.DS_Store
+*.pyc
+results
+tbdata
+*.pkl
+*.png

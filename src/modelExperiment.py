@@ -71,10 +71,10 @@ def main():
     targetRadius = 10
     playerRadius = 10
     textColorTuple = (255, 50, 50)
-    softmaxBeta = 5
+    softmaxBeta = -1
     experimentValues = co.OrderedDict()
     for i in range(50):
-        experimentValues["name"] = "softmaxModel" + str(i)
+        experimentValues["name"] = "maxModel" + str(i)
     # experimentValues["name"] = input("Please enter your name:").capitalize()
         writerPath = resultsPath + experimentValues["name"] + '.csv'
         writer = WriteDataFrameToCSV(writerPath)
@@ -82,12 +82,11 @@ def main():
         finishImage = pg.image.load(picturePath + 'finish.png')
         introductionImage = pg.transform.scale(introductionImage, (screenWidth, screenHeight))
         finishImage = pg.transform.scale(finishImage, (int(screenWidth * 2 / 3), int(screenHeight / 4)))
-        drawBackground = DrawBackground(screen, dimension, leaveEdgeSpace, backgroundColor, lineColor, lineWidth,
-                                        textColorTuple)
+        drawBackground = DrawBackground(screen, dimension, leaveEdgeSpace, backgroundColor, lineColor, lineWidth, textColorTuple)
         drawText = DrawText(screen, drawBackground)
         drawNewState = DrawNewState(screen, drawBackground, targetColor, playerColor, targetRadius, playerRadius)
         drawImage = DrawImage(screen)
-        policy = pickle.load(open(machinePolicyPath + "noise0.1SingleWolfTwoSheepsGrid15allPosition.pkl", "rb"))
+        policy = pickle.load(open(machinePolicyPath + "noise0.1WolfToTwoSheepGird15_policy.pkl", "rb"))
         modelController = ModelController(policy, dimension, softmaxBeta)
         humanController = HumanController(dimension)
         checkBoundary = CheckBoundary([0, dimension - 1], [0, dimension - 1])
@@ -96,8 +95,7 @@ def main():
         awayFromTheGoalNoise = AwayFromTheGoalNoise(controller)
         normalTrial = NormalTrial(controller, drawNewState, drawText, normalNoise, checkBoundary)
         specialTrial = SpecialTrial(controller, drawNewState, drawText, awayFromTheGoalNoise, checkBoundary)
-        experiment = Experiment(normalTrial, specialTrial, writer, experimentValues, updateWorld, drawImage, resultsPath,
-                                minDistanceBetweenGrids)
+        experiment = Experiment(normalTrial, specialTrial, writer, experimentValues, updateWorld, drawImage, resultsPath, minDistanceBetweenGrids)
         # drawImage(introductionImage)
         experiment(noiseDesignValues, shapeDesignValues)
         # drawImage(finishImage)
