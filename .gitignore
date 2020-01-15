@@ -3,3 +3,5 @@
 *.docx
 results
 machinePolicy
+*._
+pictures/
