@@ -35,7 +35,7 @@ def calculateFirstIntention(intentionList):
 
 
 if __name__ == '__main__':
-    dataPath = os.path.join(os.path.join(DIRNAME, '..'), 'results/maxModel')
+    dataPath = os.path.join(os.path.join(DIRNAME, '..'), 'results/maxModelNoNoise')
     df = pd.concat(map(pd.read_csv, glob.glob(os.path.join(dataPath, '*.csv'))), sort=False)
     # df.to_csv("all.csv")
 

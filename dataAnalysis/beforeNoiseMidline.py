@@ -15,18 +15,18 @@ def createAllCertainFormatFileList(filePath, fileFormat):
     return filenameList
 
 
-# def calculateMidlineRatioBeforeAwayByNoise(trajectory,bean1Grid,bean2Grid,noise,action):
+# def calculateMidlineRatioBeforeAwayByNoise(trajectory, bean1Grid, bean2Grid, noise, action):
 #     # trajectory的第n个点是被噪声影响的点，index的n-1点被噪声影响，index的n-2点产生噪声
-#     midlineList=list()
-#     for step in range(1,len(trajectory)):
-#         pacmanGrid=trajectory[step]
-#         midlineFlag=np.linalg.norm(np.array(pacmanGrid) - np.array(bean1Grid), ord=1)== np.linalg.norm(np.array(pacmanGrid) - np.array(bean2Grid), ord=1)
+#     midlineList = list()
+#     for step in range(1, len(trajectory)):
+#         pacmanGrid = trajectory[step]
+#         midlineFlag = np.linalg.norm(np.array(pacmanGrid) - np.array(bean1Grid), ord=1) == np.linalg.norm(np.array(pacmanGrid) - np.array(bean2Grid), ord=1)
 #         if midlineFlag:
-#             if step+1 not in noise:
+#             if step + 1 not in noise:
 #                 midlineList.append(pacmanGrid)
 #             else:
-#                 realPacmanGrid=np.array(trajectory[step-1])+np.array(action[step-1])
-#                 if  np.linalg.norm(np.array(realPacmanGrid) - np.array(bean1Grid), ord=1)== np.linalg.norm(np.array(realPacmanGrid) - np.array(bean2Grid), ord=1):
+#                 realPacmanGrid = np.array(trajectory[step - 1]) + np.array(action[step - 1])
+#                 if np.linalg.norm(np.array(realPacmanGrid) - np.array(bean1Grid), ord=1) == np.linalg.norm(np.array(realPacmanGrid) - np.array(bean2Grid), ord=1):
 #                     midlineList.append(pacmanGrid)
 #         else:
 #             break
@@ -45,8 +45,25 @@ def calculateMidlineRatioBeforeAwayByNoise(trajectory, bean1Grid, bean2Grid, noi
     return midlineList
 
 
+def calculateFirstIntentionStep(intentionList):
+    goal1Step = len(intentionList)
+    goal2Step = len(intentionList)
+    if 1 in intentionList:
+        goal1Step = intentionList.index(1)
+    if 2 in intentionList:
+        goal2Step = intentionList.index(2)
+    firstIntentionStep = min(goal1Step, goal2Step)
+    if goal1Step < goal2Step:
+        firstIntention = 1
+    elif goal2Step < goal1Step:
+        firstIntention = 2
+    else:
+        firstIntention = 0
+    return firstIntentionStep + 1
+
+
 if __name__ == "__main__":
-    resultsPath = os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + '/results/human'
+    resultsPath = os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + '/results/maxModel'
     fileFormat = '.csv'
     resultsFilenameList = createAllCertainFormatFileList(resultsPath, fileFormat)
     resultsDataFrameList = [pd.read_csv(file) for file in resultsFilenameList]
@@ -64,8 +81,13 @@ if __name__ == "__main__":
             noiseList = eval(resultsDataFrame.iat[i, 11])
             actionList = eval(resultsDataFrame.iat[i, 10])
             trajectory = eval(resultsDataFrame.iat[i, 9])
-            midline = calculateMidlineRatioBeforeAwayByNoise(trajectory, bean1Grid, bean2Grid, noiseList, actionList)
-            participantAvoidCommitmentRatioList.append(len(midline) / len(trajectory))
+            goal = eval(resultsDataFrame.iat[i, 12])
+            firstIntentionStep = calculateFirstIntentionStep(goal)
+            participantAvoidCommitmentRatioList.append(firstIntentionStep / len(goal))
+
+            # midline = calculateMidlineRatioBeforeAwayByNoise(trajectory, bean1Grid, bean2Grid, noiseList, actionList)
+            # participantAvoidCommitmentRatioList.append(len(midline) / len(trajectory))
+
         avoidCommitmentRatioList.append(np.array(participantAvoidCommitmentRatioList))
     averageAvoidCommitmentRatio = np.mean(np.array(avoidCommitmentRatioList[0]))
     stdAvoidCommitmentRatio = np.std(np.array(avoidCommitmentRatioList[0])) / np.sqrt(len(avoidCommitmentRatioList) - 1)

@@ -38,7 +38,7 @@ def calculateFirstIntentionStep(data):
 
 
 if __name__ == "__main__":
-    resultsPath = os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + '/Results/human'
+    resultsPath = os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + '/Results/max'
     fileFormat = '.csv'
     resultsFilenameList = createAllCertainFormatFileList(resultsPath, fileFormat)
     resultsDataFrameList = [pd.read_csv(file) for file in resultsFilenameList]
@@ -59,6 +59,7 @@ if __name__ == "__main__":
                           calculateFirstIntentionStep(goalList) != float('inf')]
     averageFirstIntentionStep = np.mean(np.array(firstIntentionStep))
     std = np.std(np.array(firstIntentionStep)) * np.sqrt(10) / np.sqrt(9)
+    print(averageFirstIntentionStep)
 
     n_groups = 2
 

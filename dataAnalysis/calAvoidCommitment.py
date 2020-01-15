@@ -14,7 +14,11 @@ if __name__ == '__main__':
     resultsPath = os.path.join(os.path.join(DIRNAME, '..'), 'results')
     statsList = []
     stdList = []
+<<<<<<< HEAD
     participants = ['human','softmaxBeta1','softmaxBeta2.5','max']
+=======
+    participants = ['human', 'maxModel']
+>>>>>>> 12aa17872c23798b4d816a7688f003cd50aa8693
     for participant in participants:
         dataPath = os.path.join(resultsPath, participant)
         df = pd.concat(map(pd.read_csv, glob.glob(os.path.join(dataPath, '*.csv'))), sort=False)
@@ -43,7 +47,11 @@ if __name__ == '__main__':
     xlabels = ['firstIntentionRatio', 'avoidCommitmentRatio']
     labels = participants
     x = np.arange(len(xlabels))
+<<<<<<< HEAD
     totalWidth, n = 0.6, len(participants)
+=======
+    totalWidth, n = 0.6, len(xlabels)
+>>>>>>> 12aa17872c23798b4d816a7688f003cd50aa8693
     width = totalWidth / n
     x = x - (totalWidth - width) / 2
     for i in range(len(statsList)):

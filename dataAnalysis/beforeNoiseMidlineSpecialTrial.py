@@ -45,8 +45,25 @@ def calculateMidlineRatioBeforeAwayByNoise(trajectory, bean1Grid, bean2Grid, noi
     return midlineList
 
 
+def calculateFirstIntentionStep(intentionList):
+    goal1Step = float('inf')
+    goal2Step = float('inf')
+    if 1 in intentionList:
+        goal1Step = intentionList.index(1)
+    if 2 in intentionList:
+        goal2Step = intentionList.index(2)
+    firstIntentionStep = min(goal1Step, goal2Step)
+    if goal1Step < goal2Step:
+        firstIntention = 1
+    elif goal2Step < goal1Step:
+        firstIntention = 2
+    else:
+        firstIntention = 0
+    return firstIntentionStep + 1
+
+
 if __name__ == "__main__":
-    resultsPath = os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + '/Results/maxModel'
+    resultsPath = os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + '/Results/maxModelNoNoise'
     fileFormat = '.csv'
     resultsFilenameList = createAllCertainFormatFileList(resultsPath, fileFormat)
     resultsDataFrameList = [pd.read_csv(file) for file in resultsFilenameList]
@@ -67,6 +84,11 @@ if __name__ == "__main__":
         noiseList = eval(specialTrialResultsDataFrame.iat[i, 11])
         actionList = eval(specialTrialResultsDataFrame.iat[i, 10])
         trajectory = eval(specialTrialResultsDataFrame.iat[i, 9])
+        goal = eval(resultsDataFrame.iat[i, 12])
+
+        # firstIntentionStep = calculateFirstIntentionStep(goal)
+        # avoidCommitmentRatioList.append(firstIntentionStep / len(trajectory))
+
         midline = calculateMidlineRatioBeforeAwayByNoise(trajectory, bean1Grid, bean2Grid, noiseList, actionList)
         avoidCommitmentRatioList.append(len(midline) / len(trajectory))
     averageAvoidCommitmentRatio = np.mean(np.array(avoidCommitmentRatioList))

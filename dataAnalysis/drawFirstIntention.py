@@ -54,7 +54,7 @@ def calculateFirstIntentionStep(intentionList):
 
 
 if __name__ == '__main__':
-    dataPath = os.path.join(os.path.join(DIRNAME, '..'), 'results/maxModel')
+    dataPath = os.path.join(os.path.join(DIRNAME, '..'), 'results/max')
     df = pd.concat(map(pd.read_csv, glob.glob(os.path.join(dataPath, '*.csv'))), sort=False)
     # df.to_csv("all.csv")
 
@@ -63,7 +63,7 @@ if __name__ == '__main__':
     statDF = pd.DataFrame()
     print(nubOfSubj)
 
-    df["firstIntentionConsistFinalGoal"] = df.apply(lambda x: calculateFirstIntentionStep(x['goal']), axis=1)
+    df["firstIntentionConsistFinalGoal"] = df.apply(lambda x: calculateFirstIntentionMatchFinalIntention(x['goal']), axis=1)
     dfNormailTrail = df[df['noiseNumber'] != 'special']
     dfSpecialTrail = df[df['noiseNumber'] == 'special']
     df.to_csv("statDF.csv")
