@@ -185,13 +185,18 @@ class InferGoalPosterior:
         evidence = sum(posteriorUnnormalized)
         posteriorList = [posterior / evidence for posterior in posteriorUnnormalized]
 
+        # diff = abs(posteriorList[0] - posteriorList[1])
+        # if diff < self.commitBeta/100:
+        #     posteriorList = calculateSoftmaxProbability(posteriorUnnormalized, 1 / (self.commitBeta))
+        # else:
+        #     posteriorList = calculateSoftmaxProbability(posteriorUnnormalized, self.commitBeta)
+
         diff = abs(posteriorList[0] - posteriorList[1])
-        if diff < self.commitBeta / 10:
-            posteriorUnnormalized = calculateSoftmaxProbability(posteriorUnnormalized, 1 / (self.commitBeta))
+        if diff < self.commitBeta/100:
+            posteriorList = calculateSoftmaxProbability(posteriorList, 1 / (self.commitBeta))
         else:
-            posteriorUnnormalized = calculateSoftmaxProbability(posteriorUnnormalized, self.commitBeta)
-        evidence = sum(posteriorUnnormalized)
-        posteriorList = [posterior / evidence for posterior in posteriorUnnormalized]
+            posteriorList = calculateSoftmaxProbability(posteriorList, self.commitBeta)
+
         return posteriorList
 
 
@@ -211,7 +216,6 @@ class ModelControllerWithGoal:
     def __call__(self, playerGrid, targetGrid1, targetGrid2, priorList):
         targets = list([targetGrid1, targetGrid2])
         actionProbList = [list(self.goalPolicy[playerGrid, goal].values()) for goal in targets]
-
         actionKeys = self.goalPolicy[playerGrid, targetGrid1].keys()
         actionProbs = calBasePolicy(priorList, actionProbList)
         actionDict = dict(zip(actionKeys, actionProbs))

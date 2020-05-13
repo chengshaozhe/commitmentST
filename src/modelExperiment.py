@@ -69,7 +69,6 @@ def main():
     targetRadius = 10
     playerRadius = 10
     textColorTuple = (255, 50, 50)
-<<<<<<< HEAD
 
     introductionImage = pg.image.load(picturePath + 'introduction.png')
     finishImage = pg.image.load(picturePath + 'finish.png')
@@ -86,7 +85,7 @@ def main():
     goalPolicy = pickle.load(open(machinePolicyPath + "noise0.1commitSTGoalGird15_policy.pkl", "rb"))
 
     initPrior = [0.5, 0.5]
-    commitBetaList = [0.01, 0.03, 0.05, 0.07]
+    commitBetaList = [1,2,5,7]
 
     # for softmaxBeta in softmaxBetaList:
     for commitBeta in commitBetaList:
@@ -122,36 +121,6 @@ def main():
             # debug
             # noiseDesignValues = ['special'] * 10
             experiment(noiseDesignValues, shapeDesignValues)
-=======
-    softmaxBeta = -1
-    experimentValues = co.OrderedDict()
-    for i in range(50):
-        experimentValues["name"] = "maxModel" + str(i)
-    # experimentValues["name"] = input("Please enter your name:").capitalize()
-        writerPath = resultsPath + experimentValues["name"] + '.csv'
-        writer = WriteDataFrameToCSV(writerPath)
-        introductionImage = pg.image.load(picturePath + 'introduction.png')
-        finishImage = pg.image.load(picturePath + 'finish.png')
-        introductionImage = pg.transform.scale(introductionImage, (screenWidth, screenHeight))
-        finishImage = pg.transform.scale(finishImage, (int(screenWidth * 2 / 3), int(screenHeight / 4)))
-        drawBackground = DrawBackground(screen, dimension, leaveEdgeSpace, backgroundColor, lineColor, lineWidth, textColorTuple)
-        drawText = DrawText(screen, drawBackground)
-        drawNewState = DrawNewState(screen, drawBackground, targetColor, playerColor, targetRadius, playerRadius)
-        drawImage = DrawImage(screen)
-        policy = pickle.load(open(machinePolicyPath + "noise0.1WolfToTwoSheepGird15_policy.pkl", "rb"))
-        modelController = ModelController(policy, dimension, softmaxBeta)
-        humanController = HumanController(dimension)
-        checkBoundary = CheckBoundary([0, dimension - 1], [0, dimension - 1])
-        controller = modelController
-        normalNoise = NormalNoise(controller)
-        awayFromTheGoalNoise = AwayFromTheGoalNoise(controller)
-        normalTrial = NormalTrial(controller, drawNewState, drawText, normalNoise, checkBoundary)
-        specialTrial = SpecialTrial(controller, drawNewState, drawText, awayFromTheGoalNoise, checkBoundary)
-        experiment = Experiment(normalTrial, specialTrial, writer, experimentValues, updateWorld, drawImage, resultsPath, minDistanceBetweenGrids)
-        # drawImage(introductionImage)
-        experiment(noiseDesignValues, shapeDesignValues)
-        # drawImage(finishImage)
->>>>>>> 12aa17872c23798b4d816a7688f003cd50aa8693
 
 
 if __name__ == "__main__":
